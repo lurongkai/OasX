@@ -1,0 +1,28 @@
+﻿using System.Web.Mvc;
+using OasX.Service.Interfaces;
+
+namespace OasX.Controllers
+{
+    [Authorize]
+    public class CourseController : Controller
+    {
+        private ICourseService _courseService;
+
+        public CourseController(ICourseService courseService) {
+            _courseService = courseService;
+        }
+
+        [Authorize(Roles = "Student, Teacher")]
+        public ActionResult Index(string courseId) {
+            var currentCourse = _courseService.GetCourse(courseId);
+            return View(currentCourse);
+        }
+
+        [Authorize(Roles = "Student")]
+        [ChildActionOnly]
+        public ActionResult PinnedSubjects(string courseId) {
+            var pinnedSubjects = _courseService.GetCoursePinSubjects(courseId);
+            return PartialView("_pinnedSubjects", pinnedSubjects);
+        }
+    }
+}

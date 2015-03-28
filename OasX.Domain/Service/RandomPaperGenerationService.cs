@@ -1,0 +1,39 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace OasX.Domain.Service
+{
+    public class RandomPaperGenerationService : IPaperGenerationService
+    {
+        private QuestionTicketBag _bag;
+
+        public RandomPaperGenerationService(QuestionTicketBag bag) {
+            _bag = bag;
+        }
+
+        public IEnumerable<Guid> GenerateSingleSelectionQuestions(int count) {
+            return TakeRandomCount(_bag.SingleSelectionQuestions, count);
+        }
+
+        public IEnumerable<Guid> GenerateMultipleSelectionQuestions(int count) {
+            return TakeRandomCount(_bag.MultipleSelectionQuestions, count);
+        }
+
+        public IEnumerable<Guid> GenerateSubjectiveSelectionQuestions(int count) {
+            return TakeRandomCount(_bag.SubjectiveQuestions, count);
+        }
+
+        private IEnumerable<Guid> TakeRandomCount(IEnumerable<QuestionTicket> questionTickets, int count) {
+            if (count == 0) {
+                return Enumerable.Empty<Guid>();
+            }
+
+            if (questionTickets.Count() <= count) {
+                return questionTickets.Select(q => q.QuestionId);
+            }
+
+            return questionTickets.TakeRandom(count).Select(q => q.QuestionId);
+        }
+    }
+}

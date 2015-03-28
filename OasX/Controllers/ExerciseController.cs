@@ -1,0 +1,72 @@
+﻿using System;
+using System.Linq;
+using System.Web.Mvc;
+using OasX.Models.Exercise;
+using OasX.Service.Interfaces;
+
+namespace OasX.Controllers
+{
+    public class ExerciseController : Controller
+    {
+        private IQuestionService _questionService;
+
+        public ExerciseController(IQuestionService questionService) {
+            _questionService = questionService;
+        }
+
+        public ActionResult Index(string courseId, Guid subjectId) {
+            return View();
+        }
+
+        public ActionResult Perform(string courseId, Guid subjectId, QuestionType type) {
+            if (type == QuestionType.Selectable) {
+                return View("PerformSelectable");
+            }
+
+            if (type == QuestionType.Subjective) {
+                return View("PerformSubjective");
+            }
+
+            throw new InvalidOperationException("wrong question type");
+        }
+
+        public ActionResult GetData(string courseId, Guid subjectId, QuestionType type) {
+            if (type == QuestionType.Selectable) {
+                var questions = _questionService.GetAllSelectableQuestion(courseId, subjectId)
+                    .Select(q => new
+                    {
+                        questionId = q.QuestionId,
+                        body = q.Body,
+                        score = q.Score,
+                        options = q.Options.Select(o => new
+                        {
+                            content = o.Content,
+                            isRight = o.IsRight
+                        }).ToArray()
+                    });
+                return Json(questions.ToArray(), JsonRequestBehavior.AllowGet);
+            }
+
+            if (type == QuestionType.Subjective) {
+                var questions = _questionService.GetAllSubjectiveQuestion(courseId, subjectId)
+                    .Select(q => new
+                    {
+                        questionId = q.QuestionId,
+                        body = q.Body,
+                        score = q.Score,
+                        answer = q.Answer,
+                        attachmentName = q.AttachmentName,
+                        attachmentPath = Url.Action("DownloadAttachment", new { questionId = q.QuestionId})
+                    });
+                return Json(questions.ToArray(), JsonRequestBehavior.AllowGet);
+            }
+
+            throw new InvalidOperationException("wrong type.");
+        }
+
+        public ActionResult DownloadAttachment(Guid questionId) {
+            var question = _questionService.GetSubjectiveQuestion(questionId);
+            return File(question.AttachmentPath, @"application/octet-stream", question.AttachmentName);
+        }
+    }
+}
